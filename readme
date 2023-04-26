@@ -1,0 +1,18 @@
+use tags to go through the process of using cpis through pda's. See test first to know what each tag is trying to do.
+	
+- tag '000_no_pda_nor_cpi'
+
+  Simple 'worker'. Nothing should be surprising here.
+
+- tag '001_cpi_without_pda'
+
+  The 'increment' function gets executed by the manager program
+
+- tag '002_cpi_without_pda_authority'
+
+  Added authority field to limit who can increment. Since it's the keypair is used through both programs this is unlikely useable.
+
+- tag '003_cpi_pda_authority'
+
+  'Increment' function gets signed by the PDA through CPI.
+
