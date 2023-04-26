@@ -14,6 +14,7 @@ pub mod cpi_pda {
         let cpi_program = ctx.accounts.worker_program.to_account_info();
         let cpi_accounts = Increment {
             data: ctx.accounts.worker_data.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         worker::cpi::increment(cpi_ctx)
@@ -26,4 +27,6 @@ pub struct IncrementThroughManager<'info> {
     pub worker_data: Account<'info, Data>,
 
     pub worker_program: Program<'info, Worker>,
+
+    pub authority: Signer<'info>,
 }

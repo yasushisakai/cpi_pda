@@ -19,14 +19,16 @@ describe("cpi-pda", () => {
 	anchor.setProvider(provider);
 
 	let dataKP: Keypair;
+	let authorityKP: Keypair;
 
 	before(async () => {
 		dataKP = Keypair.generate();
+		authorityKP = Keypair.generate();
 	});
 
 	it("Is initialized!", async () => {
 		await workerProgram.methods
-			.initialize()
+			.initialize(authorityKP.publicKey)
 			.accounts({
 				data: dataKP.publicKey,
 				user: me.publicKey,
@@ -39,8 +41,11 @@ describe("cpi-pda", () => {
 
 	it("Is incremented!", async () => {
 		await workerProgram.methods.increment().accounts({
-			data: dataKP.publicKey
-		}).rpc();
+			data: dataKP.publicKey,
+			authority: authorityKP.publicKey
+		})
+		.signers([authorityKP])
+		.rpc();
 
 		const dataAccount = await workerProgram.account.data.fetch(dataKP.publicKey);
 		assert(dataAccount.value.toNumber() === 1, "value should have been incremented");
@@ -50,8 +55,9 @@ describe("cpi-pda", () => {
 		
 		await managerProgram.methods.incThroughMe().accounts({
 			workerProgram: workerProgram.programId,
-			workerData: dataKP.publicKey
-		}).rpc();
+			workerData: dataKP.publicKey,
+			authority: authorityKP.publicKey
+		}).signers([authorityKP]).rpc();
 
 		const dataAccount = await workerProgram.account.data.fetch(dataKP.publicKey);
 		assert(dataAccount.value.toNumber() === 2, "value should have been incremented twice");
