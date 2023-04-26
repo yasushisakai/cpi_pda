@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-// import { CpiPda } from "../target/types/cpi_pda";
+import { CpiPda } from "../target/types/cpi_pda";
 import { Worker as WorkerTypes } from "../target/types/worker";
 import { Keypair } from "@solana/web3.js";
 import { assert } from "chai";
@@ -9,7 +9,7 @@ describe("cpi-pda", () => {
 	// Configure the client to use the local cluster.
 	anchor.setProvider(anchor.AnchorProvider.env());
 
-	//const managerProgram = anchor.workspace.CpiPda as Program<CpiPda>;
+	const managerProgram = anchor.workspace.CpiPda as Program<CpiPda>;
 	const workerProgram = anchor.workspace.Worker as Program<WorkerTypes>;
 
 	const { SystemProgram } = anchor.web3;
@@ -44,6 +44,18 @@ describe("cpi-pda", () => {
 
 		const dataAccount = await workerProgram.account.data.fetch(dataKP.publicKey);
 		assert(dataAccount.value.toNumber() === 1, "value should have been incremented");
+	})
+
+	it("Is incremented by the manager!", async() => {
+		
+		await managerProgram.methods.incThroughMe().accounts({
+			workerProgram: workerProgram.programId,
+			workerData: dataKP.publicKey
+		}).rpc();
+
+		const dataAccount = await workerProgram.account.data.fetch(dataKP.publicKey);
+		assert(dataAccount.value.toNumber() === 2, "value should have been incremented twice");
+
 	})
 
 });

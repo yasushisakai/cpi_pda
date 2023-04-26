@@ -500,6 +500,7 @@ name = "cpi-pda"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "worker",
 ]
 
 [[package]]
