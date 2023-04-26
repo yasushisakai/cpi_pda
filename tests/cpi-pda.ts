@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { CpiPda } from "../target/types/cpi_pda";
 import { Worker as WorkerTypes } from "../target/types/worker";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { assert } from "chai";
 
 describe("cpi-pda", () => {
@@ -19,16 +19,23 @@ describe("cpi-pda", () => {
 	anchor.setProvider(provider);
 
 	let dataKP: Keypair;
-	let authorityKP: Keypair;
+	let authorityPDA: PublicKey;
+	let authorityBump: number;
 
 	before(async () => {
 		dataKP = Keypair.generate();
-		authorityKP = Keypair.generate();
+
+		const [pda, bump] = await PublicKey.findProgramAddress([], managerProgram.programId);
+
+		authorityPDA = pda;
+		authorityBump = bump;
+
+
 	});
 
 	it("Is initialized!", async () => {
 		await workerProgram.methods
-			.initialize(authorityKP.publicKey)
+			.initialize(authorityPDA)
 			.accounts({
 				data: dataKP.publicKey,
 				user: me.publicKey,
@@ -39,28 +46,16 @@ describe("cpi-pda", () => {
 		assert(dataAccount.value.toNumber() === 0, 'value should be 0');
 	});
 
-	it("Is incremented!", async () => {
-		await workerProgram.methods.increment().accounts({
-			data: dataKP.publicKey,
-			authority: authorityKP.publicKey
-		})
-		.signers([authorityKP])
-		.rpc();
+	it("Is incremented by the manager!", async () => {
+
+		await managerProgram.methods.incThroughPda(authorityBump).accounts({
+			workerProgram: workerProgram.programId,
+			workerData: dataKP.publicKey,
+			authority: authorityPDA
+		}).rpc();
 
 		const dataAccount = await workerProgram.account.data.fetch(dataKP.publicKey);
 		assert(dataAccount.value.toNumber() === 1, "value should have been incremented");
-	})
-
-	it("Is incremented by the manager!", async() => {
-		
-		await managerProgram.methods.incThroughMe().accounts({
-			workerProgram: workerProgram.programId,
-			workerData: dataKP.publicKey,
-			authority: authorityKP.publicKey
-		}).signers([authorityKP]).rpc();
-
-		const dataAccount = await workerProgram.account.data.fetch(dataKP.publicKey);
-		assert(dataAccount.value.toNumber() === 2, "value should have been incremented twice");
 
 	})
 
